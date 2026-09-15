@@ -27,7 +27,7 @@ export default async function Home() {
       <header className="border-b">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/" className="text-lg font-semibold tracking-tight">
-            Passkey
+            Your App
           </Link>
 
           {user ? (
@@ -62,7 +62,8 @@ export default async function Home() {
           Simple, secure sign-in with passkeys.
         </h1>
         <p className="max-w-xl text-lg text-muted-foreground">
-          A secure authentication experience without passwords.
+          Replace this page with your application experience. Authentication is
+          already wired up with passkeys.
         </p>
       </section>
     </main>

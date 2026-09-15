@@ -1,36 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Passkey Auth Template
 
-## Getting Started
+A reusable Next.js starter for projects that need passwordless authentication
+with WebAuthn passkeys.
 
-First, run the development server:
+## Included
+
+- Passkey registration and sign-in flows
+- SimpleWebAuthn browser and server verification
+- Prisma persistence for users and credentials
+- Signed, HTTP-only session cookies
+- Short-lived, single-use WebAuthn challenges
+- Login, registration, and authenticated home-page examples
+- Base UI components and Tailwind styling
+
+## Quick start
+
+### 1. Create a project from this template
+
+Copy or use this repository as a template, then install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configure environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Copy `.env.example` to `.env` and update the values:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```powershell
+Copy-Item .env.example .env
+```
 
-## Learn More
+Required variables:
 
-To learn more about Next.js, take a look at the following resources:
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | Prisma database connection string |
+| `SESSION_SECRET` | Secret used to sign session cookies |
+| `RP_NAME` | Name shown by the passkey provider |
+| `RP_ID` | WebAuthn relying-party ID, usually the hostname |
+| `RP_ORIGIN` | Full origin used for verification, such as `http://localhost:3000` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`SESSION_SECRET` is required in production. The development fallback is only
+intended for local work.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. Prepare the database
 
-## Deploy on Vercel
+The starter uses SQLite by default:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+pnpm prisma migrate dev
+pnpm prisma generate
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Replace the Prisma datasource and adapter in `prisma/schema.prisma` and
+`lib/db.ts` when using another database provider.
+
+### 4. Start the app
+
+```bash
+pnpm dev
+```
+
+Open <http://localhost:3000>, then create a passkey from the registration page.
+
+## Adapting the template
+
+- Replace the example content in `app/page.tsx`.
+- Update the application name and metadata in `app/layout.tsx`.
+- Customize `app/login/page.tsx` and `app/register/page.tsx` to match your UX.
+- Extend the `User` and `Credential` models for application-specific data.
+- Replace the in-memory challenge store in `lib/challengeStore.ts` with a
+  durable store before deploying multiple instances.
+- Use a stable production `RP_ID` and `RP_ORIGIN`; passkeys are origin-bound.
+- Configure HTTPS in production.
+
+## Useful commands
+
+```bash
+pnpm dev
+pnpm lint
+pnpm prisma studio
+pnpm prisma migrate dev
+```
+
+## Project structure
+
+```text
+app/api/auth/       WebAuthn registration and authentication endpoints
+app/login/          Sign-in example
+app/register/       Passkey registration example
+lib/challengeStore  Single-use challenge storage
+lib/db.ts            Prisma client and database adapter
+lib/session.ts       Signed session cookie helpers
+lib/webauthn.ts      SimpleWebAuthn server wrappers
+prisma/              Schema and migrations
+```

@@ -19,8 +19,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Passkey",
-  description: "Simple, secure sign-in with passkeys.",
+  title: "Passkey Auth Template",
+  description: "A reusable passwordless authentication starter.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

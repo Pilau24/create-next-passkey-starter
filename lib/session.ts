@@ -8,7 +8,7 @@ function getSessionSecret() {
     throw new Error("SESSION_SECRET must be configured in production.");
   }
 
-  return secret ?? "passkey-demo-development-secret";
+  return secret ?? "passkey-auth-template-development-secret";
 }
 
 export function createSessionToken(userId: number) {

@@ -1,4 +1,4 @@
-# Copilot instructions for passkey-demo
+# Copilot instructions for passkey-auth-template
 
 This workspace is governed by the repository-level rules in AGENTS.md. Keep all AI-assisted work aligned with the same process across VS Code Copilot, Claude Code, Cursor, Devin, and other agent tools.
 
@@ -29,7 +29,7 @@ This repo includes a custom Next.js compatibility note from AGENTS.md: "This is 
 
 - Keep instructions consistent with the root `AGENTS.md` file.
 - Treat this file as the workspace-level default for GitHub Copilot chat requests.
-- Keep related compatibility files such as `CLAUDE.md`, `.claude/`, `.cursor/`, and `.devin/` aligned with the same repo rules when they are used by other agents.
+- Keep agent-specific instructions aligned with the shared rules when additional agent integrations are added.
 
 ## General expectations
 

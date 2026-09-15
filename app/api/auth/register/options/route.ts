@@ -33,7 +33,7 @@ export async function POST(req: Request) {
       user = await prisma.user.create({ data: { username } });
     }
 
-    const rpName = process.env.RP_NAME ?? 'Passkey Demo';
+    const rpName = process.env.RP_NAME ?? 'Passkey Auth Template';
     const rpID = getRpID(req);
 
     const options = await makeRegistrationOptions({ rpName, rpID, userID: String(user.id), userName: user.username });
