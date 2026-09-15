@@ -49,3 +49,6 @@ next-env.d.ts
 
 # Database
 dev.db
+
+# Local package archives
+.artifacts/

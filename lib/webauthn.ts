@@ -77,10 +77,7 @@ export async function verifyAuthentication({
 }) {
   const credentialObj: WebAuthnCredential = {
     id: credential.id,
-    publicKey:
-      credentialPublicKey instanceof Uint8Array
-        ? credentialPublicKey
-        : new Uint8Array(credentialPublicKey),
+    publicKey: Uint8Array.from(credentialPublicKey),
     counter: expectedCounter,
   };
 

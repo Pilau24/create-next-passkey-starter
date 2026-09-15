@@ -1,12 +1,39 @@
 {
-  "name": "passkey-auth-template",
+  "name": "create-next-passkey-starter",
   "version": "0.1.0",
-  "private": true,
+  "description": "Create a Next.js app with passkey authentication preconfigured.",
+  "bin": {
+    "create-next-passkey-starter": "bin/create-next-passkey-starter.mjs"
+  },
+  "files": [
+    "app",
+    "bin",
+    "components",
+    "components.json",
+    ".env.example",
+    ".gitignore",
+    "eslint.config.mjs",
+    "lib",
+    "next.config.ts",
+    "postcss.config.mjs",
+    "prisma",
+    "prisma.config.ts",
+    "public",
+    "README.md",
+    "tsconfig.json",
+    "package.json",
+    "pnpm-lock.yaml"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "pack:check": "pnpm pack --pack-destination .artifacts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

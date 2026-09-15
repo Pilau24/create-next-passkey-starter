@@ -13,17 +13,44 @@ with WebAuthn passkeys.
 - Login, registration, and authenticated home-page examples
 - Base UI components and Tailwind styling
 
-## Quick start
+## Create a new app
 
-### 1. Create a project from this template
+Run the published starter from any directory:
 
-Copy or use this repository as a template, then install dependencies:
+```bash
+pnpm create next-passkey-starter my-passkey-app
+```
+
+The command creates a new project, gives it the target directory name, and
+leaves the template's authentication routes, Prisma schema, UI, and migrations
+ready to customize.
+
+Options:
+
+```text
+--force   Allow an existing non-empty directory to be overwritten
+--help    Show command help
+```
+
+Then follow the printed setup steps:
+
+```powershell
+cd my-passkey-app
+Copy-Item .env.example .env
+pnpm install
+pnpm prisma migrate dev
+pnpm dev
+```
+
+## Develop this template locally
+
+Install dependencies in the template repository:
 
 ```bash
 pnpm install
 ```
 
-### 2. Configure environment variables
+### Configure environment variables
 
 Copy `.env.example` to `.env` and update the values:
 
@@ -44,7 +71,7 @@ Required variables:
 `SESSION_SECRET` is required in production. The development fallback is only
 intended for local work.
 
-### 3. Prepare the database
+### Prepare the database
 
 The starter uses SQLite by default:
 
@@ -56,7 +83,7 @@ pnpm prisma generate
 Replace the Prisma datasource and adapter in `prisma/schema.prisma` and
 `lib/db.ts` when using another database provider.
 
-### 4. Start the app
+### Start the app
 
 ```bash
 pnpm dev
@@ -80,9 +107,25 @@ Open <http://localhost:3000>, then create a passkey from the registration page.
 ```bash
 pnpm dev
 pnpm lint
+pnpm typecheck
+pnpm pack:check
 pnpm prisma studio
 pnpm prisma migrate dev
 ```
+
+## Publishing
+
+The package is published as `create-next-passkey-starter`. Create a version
+tag to trigger `.github/workflows/publish.yml`:
+
+```bash
+pnpm version patch
+git push origin main --follow-tags
+```
+
+Configure npm trusted publishing for this GitHub repository and the package
+before the first release. The workflow uses GitHub OIDC provenance and does
+not store an npm token in the repository.
 
 ## Project structure
 
