@@ -10,7 +10,8 @@ const databaseUrl = process.env.DATABASE_URL ?? "file:./dev.db";
 const adapter = new PrismaBetterSqlite3({ url: databaseUrl });
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-const prisma = globalThis.prisma ?? new PrismaClient({ adapter }) as PrismaClient;
+const prisma =
+  globalThis.prisma ?? (new PrismaClient({ adapter }) as PrismaClient);
 
 if (process.env.NODE_ENV !== "production") {
   globalThis.prisma = prisma;
