@@ -21,9 +21,9 @@ Run the published starter from any directory:
 pnpm create next-passkey-starter my-passkey-app
 ```
 
-The command creates a new project, gives it the target directory name, and
-leaves the template's authentication routes, Prisma schema, UI, and migrations
-ready to customize.
+The command creates a new project, derives its package name from the target
+directory, and leaves the template's authentication routes, Prisma schema, UI,
+and migrations ready to customize.
 
 Options:
 

@@ -1,6 +1,6 @@
 {
   "name": "create-next-passkey-starter",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "description": "Create a Next.js app with passkey authentication preconfigured.",
   "bin": {
     "create-next-passkey-starter": "bin/create-next-passkey-starter.mjs"
