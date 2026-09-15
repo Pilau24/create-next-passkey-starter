@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { getRpID, makeRegistrationOptions } from '@/lib/webauthn';
 
 // In-memory challenge store for demo purposes. In production use a durable session store.
-import { registrationChallenges } from '@/lib/challengeStore';
+import { storeRegistrationChallenge } from '@/lib/challengeStore';
 
 type JsonBody = Record<string, unknown>;
 const REGISTER_ERROR = 'Unable to start registration.';
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     const options = await makeRegistrationOptions({ rpName, rpID, userID: String(user.id), userName: user.username });
 
     const sessionId = crypto.randomUUID();
-    registrationChallenges.set(sessionId, {
+    storeRegistrationChallenge(sessionId, {
       challenge: options.challenge,
       userId: String(user.id),
     });

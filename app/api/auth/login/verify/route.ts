@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
+import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
 import { prisma } from '@/lib/db';
 import { getRpID, verifyAuthentication } from '@/lib/webauthn';
-import { authChallenges } from '@/lib/challengeStore';
+import { consumeAuthenticationChallenge } from '@/lib/challengeStore';
 import { createSessionToken } from '@/lib/session';
 
 type JsonBody = Record<string, unknown>;
@@ -29,9 +30,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    const expectedChallenge = authChallenges.get(userId);
+    const expectedChallenge = consumeAuthenticationChallenge(userId);
     if (!expectedChallenge) return NextResponse.json({ error: LOGIN_ERROR }, { status: 400 });
-    authChallenges.delete(userId);
 
     const credentialRecord = credential as Record<string, unknown>;
     const credentialId = typeof credentialRecord.id === 'string' ? credentialRecord.id : '';
@@ -44,14 +44,8 @@ export async function POST(req: Request) {
 
     const rpID = getRpID(req);
     const expectedOrigin = process.env.RP_ORIGIN ?? new URL(req.url).origin;
-    const responseRecord = credentialRecord.response as Record<string, unknown> | undefined;
-    const authenticatorData =
-      responseRecord && typeof responseRecord === 'object'
-        ? (responseRecord as { authenticatorData?: { counter?: number } }).authenticatorData
-        : undefined;
-
     const verification = await verifyAuthentication({
-      credential: credential as Parameters<typeof verifyAuthentication>[0]['credential'],
+      credential: credential as AuthenticationResponseJSON,
       expectedChallenge,
       expectedCounter: Number(stored.counter),
       rpID,
@@ -64,7 +58,9 @@ export async function POST(req: Request) {
     }
 
     // update counter and lastUsed
-    const newCounter = verification.authenticationInfo?.newCounter ?? authenticatorData?.counter ?? stored.counter + 1;
+    const newCounter =
+      verification.authenticationInfo?.newCounter ??
+      stored.counter + 1;
 
     await prisma.credential.update({
       where: { credentialId },

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getRpID, makeAuthenticationOptions } from '@/lib/webauthn';
-import { authChallenges } from '@/lib/challengeStore';
+import { storeAuthenticationChallenge } from '@/lib/challengeStore';
 
 type JsonBody = Record<string, unknown>;
 const LOGIN_ERROR = 'Unable to start sign-in.';
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     const challengeKey = crypto.randomUUID();
 
     // Use a random challenge key so the response never exposes whether a user exists.
-    authChallenges.set(challengeKey, options.challenge);
+    storeAuthenticationChallenge(challengeKey, options.challenge);
 
     return NextResponse.json({ ...options, userId: challengeKey });
   } catch (err: unknown) {

@@ -54,11 +54,14 @@ export default function LoginPage() {
         throw new Error(GENERIC_LOGIN_ERROR);
       }
 
-      const credential = await startAuthentication({ optionsJSON: options });
+      const { userId, ...authenticationOptions } = options;
+      const credential = await startAuthentication({
+        optionsJSON: authenticationOptions,
+      });
       const verificationResponse = await fetch("/api/auth/login/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: options.userId, credential }),
+        body: JSON.stringify({ userId, credential }),
       });
       const verification = (await verificationResponse.json()) as {
         verified?: boolean;
@@ -147,7 +150,10 @@ export default function LoginPage() {
         <CardFooter className="justify-center border-t pt-6">
           <p className="text-sm text-muted-foreground">
             New here?{" "}
-            <Link className="font-medium text-foreground underline underline-offset-4" href="/register">
+            <Link
+              className="font-medium text-foreground underline underline-offset-4"
+              href="/register"
+            >
               Create a passkey
             </Link>
           </p>

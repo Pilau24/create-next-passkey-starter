@@ -1,10 +1,14 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
-const FALLBACK_SECRET = "passkey-demo-development-secret";
 
 function getSessionSecret() {
-  return process.env.SESSION_SECRET ?? FALLBACK_SECRET;
+  const secret = process.env.SESSION_SECRET;
+  if (!secret && process.env.NODE_ENV === "production") {
+    throw new Error("SESSION_SECRET must be configured in production.");
+  }
+
+  return secret ?? "passkey-demo-development-secret";
 }
 
 export function createSessionToken(userId: number) {

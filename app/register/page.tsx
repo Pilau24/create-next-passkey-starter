@@ -54,11 +54,14 @@ export default function RegisterPage() {
         throw new Error(GENERIC_REGISTER_ERROR);
       }
 
-      const credential = await startRegistration({ optionsJSON: options });
+      const { userId, ...registrationOptions } = options;
+      const credential = await startRegistration({
+        optionsJSON: registrationOptions,
+      });
       const verificationResponse = await fetch("/api/auth/register/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: options.userId, credential }),
+        body: JSON.stringify({ userId, credential }),
       });
       const verification = (await verificationResponse.json()) as {
         verified?: boolean;

@@ -4,6 +4,11 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
+import type {
+  AuthenticationResponseJSON,
+  RegistrationResponseJSON,
+  WebAuthnCredential,
+} from '@simplewebauthn/server';
 
 export function getRpID(request: Request) {
   return process.env.RP_ID ?? new URL(request.url).hostname;
@@ -22,7 +27,17 @@ export async function makeRegistrationOptions({ rpName, rpID, userID, userName }
   });
 }
 
-export async function verifyRegistration({ credential, expectedChallenge, rpID, expectedOrigin }: { credential: any; expectedChallenge: string; rpID: string; expectedOrigin: string; }) {
+export async function verifyRegistration({
+  credential,
+  expectedChallenge,
+  rpID,
+  expectedOrigin,
+}: {
+  credential: RegistrationResponseJSON;
+  expectedChallenge: string;
+  rpID: string;
+  expectedOrigin: string;
+}) {
   return verifyRegistrationResponse({
     response: credential,
     expectedChallenge,
@@ -31,7 +46,13 @@ export async function verifyRegistration({ credential, expectedChallenge, rpID, 
   });
 }
 
-export async function makeAuthenticationOptions({ rpID, allowCredentials }: { rpID: string; allowCredentials?: any[] }) {
+export async function makeAuthenticationOptions({
+  rpID,
+  allowCredentials,
+}: {
+  rpID: string;
+  allowCredentials?: { id: string; type: 'public-key' }[];
+}) {
   return await generateAuthenticationOptions({
     rpID,
     allowCredentials,
@@ -39,27 +60,35 @@ export async function makeAuthenticationOptions({ rpID, allowCredentials }: { rp
   });
 }
 
-export async function verifyAuthentication({ credential, expectedChallenge, expectedCounter, rpID, expectedOrigin, credentialPublicKey }: { credential: any; expectedChallenge: string; expectedCounter?: number; rpID: string; expectedOrigin: string; credentialPublicKey?: Buffer | string | Uint8Array; }) {
-  // The verifyAuthenticationResponse helper expects the authenticator state; adapt as needed when wiring to DB.
-  const credentialObj = credentialPublicKey
-    ? {
-        id: credential.id,
-        publicKey: ((): Uint8Array => {
-          if (credentialPublicKey instanceof Uint8Array) return credentialPublicKey;
-          if (Buffer.isBuffer(credentialPublicKey)) return new Uint8Array(credentialPublicKey);
-          if (typeof credentialPublicKey === 'string') return Uint8Array.from(Buffer.from(credentialPublicKey, 'base64'));
-          return new Uint8Array();
-        })(),
-        counter: typeof expectedCounter === 'number' ? expectedCounter : 0,
-        transports: [],
-      }
-    : undefined;
+export async function verifyAuthentication({
+  credential,
+  expectedChallenge,
+  expectedCounter,
+  rpID,
+  expectedOrigin,
+  credentialPublicKey,
+}: {
+  credential: AuthenticationResponseJSON;
+  expectedChallenge: string;
+  expectedCounter: number;
+  rpID: string;
+  expectedOrigin: string;
+  credentialPublicKey: Buffer | Uint8Array;
+}) {
+  const credentialObj: WebAuthnCredential = {
+    id: credential.id,
+    publicKey:
+      credentialPublicKey instanceof Uint8Array
+        ? credentialPublicKey
+        : new Uint8Array(credentialPublicKey),
+    counter: expectedCounter,
+  };
 
   return verifyAuthenticationResponse({
     response: credential,
     expectedChallenge,
     expectedOrigin,
     expectedRPID: rpID,
-    credential: credentialObj as any,
+    credential: credentialObj,
   });
 }

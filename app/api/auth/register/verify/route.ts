@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
+import type { RegistrationResponseJSON } from '@simplewebauthn/server';
 import { prisma } from '@/lib/db';
 import { getRpID, verifyRegistration } from '@/lib/webauthn';
-import { registrationChallenges } from '@/lib/challengeStore';
+import { consumeRegistrationChallenge } from '@/lib/challengeStore';
 
 type JsonBody = Record<string, unknown>;
 const REGISTER_ERROR = 'Unable to create a passkey.';
@@ -28,15 +29,14 @@ export async function POST(req: Request) {
   }
 
   try {
-    const registrationSession = registrationChallenges.get(sessionId);
+    const registrationSession = consumeRegistrationChallenge(sessionId);
     if (!registrationSession) return NextResponse.json({ error: REGISTER_ERROR }, { status: 400 });
-    registrationChallenges.delete(sessionId);
 
     const rpID = getRpID(req);
     const expectedOrigin = process.env.RP_ORIGIN ?? new URL(req.url).origin;
 
     const verification = await verifyRegistration({
-      credential,
+      credential: credential as RegistrationResponseJSON,
       expectedChallenge: registrationSession.challenge,
       rpID,
       expectedOrigin,
@@ -49,13 +49,11 @@ export async function POST(req: Request) {
     const regInfo = verification.registrationInfo;
     if (!regInfo) return NextResponse.json({ error: REGISTER_ERROR }, { status: 400 });
 
-    const storedCredentialId = verification.registrationInfo.credential.id as string;
+    const storedCredentialId = verification.registrationInfo.credential.id;
 
     // credentialPublicKey comes as ArrayBuffer/Buffer/string depending on helper. Store as Bytes in Prisma.
     const credentialPublicKey = verification.registrationInfo.credential.publicKey;
-    const publicKey = typeof credentialPublicKey === 'string'
-      ? Buffer.from(credentialPublicKey, 'base64')
-      : Buffer.from(credentialPublicKey as any);
+    const publicKey = Buffer.from(credentialPublicKey);
 
     const counter = verification.registrationInfo.credential.counter ?? 0;
 
