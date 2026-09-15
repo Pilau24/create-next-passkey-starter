@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id          Int          @id @default(autoincrement())
+  username    String       @unique
+  createdAt   DateTime     @default(now()) @map("created_at")
+  credentials Credential[]
+
+  @@map("users")
+}
+
+model Credential {
+  credentialId   String    @id @map("cred_id")
+  publicKey      Bytes     @map("cred_public_key")
+  internalUserId Int       @map("internal_user_id")
+  webauthnUserId String    @map("webauthn_user_id")
+  counter        Int       @default(0)
+  backupEligible Boolean   @default(false) @map("backup_eligible")
+  backupStatus   Boolean   @default(false) @map("backup_status")
+  transports     String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  lastUsed       DateTime? @map("last_used")
+
+  user User @relation(fields: [internalUserId], references: [id])
+
+  @@unique([internalUserId, webauthnUserId])
+  @@index([internalUserId, credentialId])
+  @@index([webauthnUserId, credentialId])
+  @@map("passkeys")
+}

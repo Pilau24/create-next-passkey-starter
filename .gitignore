@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE-specific directories
+.agents/
+.claude/
+.cursor/
+.devin/
+
+# Database
+dev.db
