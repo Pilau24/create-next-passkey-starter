@@ -4,6 +4,7 @@ import { makeAuthenticationOptions } from '@/lib/webauthn';
 import { authChallenges } from '@/lib/challengeStore';
 
 type JsonBody = Record<string, unknown>;
+const LOGIN_ERROR = 'Unable to start sign-in.';
 
 export async function POST(req: Request) {
   let body: JsonBody | null = null;
@@ -11,23 +12,24 @@ export async function POST(req: Request) {
   try {
     const parsed = await req.json();
     if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return NextResponse.json({ error: 'request body must be a JSON object' }, { status: 400 });
+      return NextResponse.json({ error: LOGIN_ERROR }, { status: 400 });
     }
     body = parsed as JsonBody;
   } catch {
-    return NextResponse.json({ error: 'invalid or missing JSON body' }, { status: 400 });
+    return NextResponse.json({ error: LOGIN_ERROR }, { status: 400 });
   }
 
   const username = typeof body.username === 'string' ? body.username.trim() : '';
   if (!username) {
-    return NextResponse.json({ error: 'username is required' }, { status: 400 });
+    return NextResponse.json({ error: LOGIN_ERROR }, { status: 400 });
   }
 
   try {
     const user = await prisma.user.findUnique({ where: { username } });
-    if (!user) return NextResponse.json({ error: 'user not found' }, { status: 404 });
 
-    const credentials = await prisma.credential.findMany({ where: { internalUserId: user.id } });
+    const credentials = user
+      ? await prisma.credential.findMany({ where: { internalUserId: user.id } })
+      : [];
 
     const allowCredentials = credentials.map((credential: { credentialId: string }) => ({
       id: credential.credentialId,
@@ -36,13 +38,13 @@ export async function POST(req: Request) {
 
     const rpID = process.env.RP_ID ?? process.env.NEXT_PUBLIC_VERCEL_URL ?? 'localhost';
     const options = await makeAuthenticationOptions({ rpID, allowCredentials });
+    const challengeKey = crypto.randomUUID();
 
-    // store this challenge keyed to user id
-    authChallenges.set(String(user.id), options.challenge);
+    // Use a random challenge key so the response never exposes whether a user exists.
+    authChallenges.set(challengeKey, options.challenge);
 
-    return NextResponse.json(options);
+    return NextResponse.json({ ...options, userId: challengeKey });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: LOGIN_ERROR }, { status: 400 });
   }
 }

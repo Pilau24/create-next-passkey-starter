@@ -6,6 +6,7 @@ import { makeRegistrationOptions } from '@/lib/webauthn';
 import { registrationChallenges } from '@/lib/challengeStore';
 
 type JsonBody = Record<string, unknown>;
+const REGISTER_ERROR = 'Unable to start registration.';
 
 export async function POST(req: Request) {
   let body: JsonBody | null = null;
@@ -13,16 +14,16 @@ export async function POST(req: Request) {
   try {
     const parsed = await req.json();
     if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return NextResponse.json({ error: 'request body must be a JSON object' }, { status: 400 });
+      return NextResponse.json({ error: REGISTER_ERROR }, { status: 400 });
     }
     body = parsed as JsonBody;
   } catch {
-    return NextResponse.json({ error: 'invalid or missing JSON body' }, { status: 400 });
+    return NextResponse.json({ error: REGISTER_ERROR }, { status: 400 });
   }
 
   const username = typeof body.username === 'string' ? body.username.trim() : '';
   if (!username) {
-    return NextResponse.json({ error: 'username is required' }, { status: 400 });
+    return NextResponse.json({ error: REGISTER_ERROR }, { status: 400 });
   }
 
   try {
@@ -37,12 +38,14 @@ export async function POST(req: Request) {
 
     const options = await makeRegistrationOptions({ rpName, rpID, userID: String(user.id), userName: user.username });
 
-    // store challenge for later verification
-    registrationChallenges.set(String(user.id), options.challenge);
+    const sessionId = crypto.randomUUID();
+    registrationChallenges.set(sessionId, {
+      challenge: options.challenge,
+      userId: String(user.id),
+    });
 
-    return NextResponse.json(options);
+    return NextResponse.json({ ...options, userId: sessionId });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: REGISTER_ERROR }, { status: 400 });
   }
 }

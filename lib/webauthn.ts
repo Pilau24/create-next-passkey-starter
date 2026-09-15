@@ -18,11 +18,11 @@ export async function makeRegistrationOptions({ rpName, rpID, userID, userName }
   });
 }
 
-export async function verifyRegistration({ credential, expectedChallenge, rpID }: { credential: any; expectedChallenge: string; rpID: string; }) {
+export async function verifyRegistration({ credential, expectedChallenge, rpID, expectedOrigin }: { credential: any; expectedChallenge: string; rpID: string; expectedOrigin: string; }) {
   return verifyRegistrationResponse({
     response: credential,
     expectedChallenge,
-    expectedOrigin: `https://${rpID}`,
+    expectedOrigin,
     expectedRPID: rpID,
   });
 }
@@ -35,7 +35,7 @@ export async function makeAuthenticationOptions({ rpID, allowCredentials }: { rp
   });
 }
 
-export async function verifyAuthentication({ credential, expectedChallenge, expectedCounter, rpID, credentialPublicKey }: { credential: any; expectedChallenge: string; expectedCounter?: number; rpID: string; credentialPublicKey?: Buffer | string | Uint8Array; }) {
+export async function verifyAuthentication({ credential, expectedChallenge, expectedCounter, rpID, expectedOrigin, credentialPublicKey }: { credential: any; expectedChallenge: string; expectedCounter?: number; rpID: string; expectedOrigin: string; credentialPublicKey?: Buffer | string | Uint8Array; }) {
   // The verifyAuthenticationResponse helper expects the authenticator state; adapt as needed when wiring to DB.
   const credentialObj = credentialPublicKey
     ? {
@@ -54,7 +54,7 @@ export async function verifyAuthentication({ credential, expectedChallenge, expe
   return verifyAuthenticationResponse({
     response: credential,
     expectedChallenge,
-    expectedOrigin: `https://${rpID}`,
+    expectedOrigin,
     expectedRPID: rpID,
     credential: credentialObj as any,
   });

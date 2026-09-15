@@ -4,6 +4,7 @@ import { verifyRegistration } from '@/lib/webauthn';
 import { registrationChallenges } from '@/lib/challengeStore';
 
 type JsonBody = Record<string, unknown>;
+const REGISTER_ERROR = 'Unable to create a passkey.';
 
 export async function POST(req: Request) {
   let body: JsonBody | null = null;
@@ -11,33 +12,42 @@ export async function POST(req: Request) {
   try {
     const parsed = await req.json();
     if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return NextResponse.json({ error: 'request body must be a JSON object' }, { status: 400 });
+      return NextResponse.json({ error: REGISTER_ERROR }, { status: 400 });
     }
     body = parsed as JsonBody;
   } catch {
-    return NextResponse.json({ error: 'invalid or missing JSON body' }, { status: 400 });
+    return NextResponse.json({ error: REGISTER_ERROR }, { status: 400 });
   }
 
   const rawUserId = body.userId;
-  const userId = typeof rawUserId === 'string' || typeof rawUserId === 'number' ? String(rawUserId) : '';
+  const sessionId = typeof rawUserId === 'string' ? rawUserId : '';
   const credential = body.credential;
 
-  if (typeof credential !== 'object' || credential === null || Array.isArray(credential) || !userId.trim()) {
-    return NextResponse.json({ error: 'credential and userId are required' }, { status: 400 });
+  if (typeof credential !== 'object' || credential === null || Array.isArray(credential) || !sessionId.trim()) {
+    return NextResponse.json({ error: REGISTER_ERROR }, { status: 400 });
   }
 
   try {
-    const expectedChallenge = registrationChallenges.get(userId);
-    if (!expectedChallenge) return NextResponse.json({ error: 'no registration challenge found' }, { status: 400 });
+    const registrationSession = registrationChallenges.get(sessionId);
+    if (!registrationSession) return NextResponse.json({ error: REGISTER_ERROR }, { status: 400 });
+    registrationChallenges.delete(sessionId);
 
     const rpID = process.env.RP_ID ?? process.env.NEXT_PUBLIC_VERCEL_URL ?? 'localhost';
+    const expectedOrigin = process.env.RP_ORIGIN ?? new URL(req.url).origin;
 
-    const verification = await verifyRegistration({ credential, expectedChallenge, rpID });
+    const verification = await verifyRegistration({
+      credential,
+      expectedChallenge: registrationSession.challenge,
+      rpID,
+      expectedOrigin,
+    });
 
-    if (!verification.verified) return NextResponse.json({ verified: false }, { status: 400 });
+    if (!verification.verified) {
+      return NextResponse.json({ verified: false, error: REGISTER_ERROR }, { status: 400 });
+    }
 
     const regInfo = verification.registrationInfo;
-    if (!regInfo) return NextResponse.json({ error: 'missing registration info' }, { status: 500 });
+    if (!regInfo) return NextResponse.json({ error: REGISTER_ERROR }, { status: 400 });
 
     const storedCredentialId = verification.registrationInfo.credential.id as string;
 
@@ -53,18 +63,14 @@ export async function POST(req: Request) {
       data: {
         credentialId: storedCredentialId,
         publicKey,
-        internalUserId: Number(userId),
+        internalUserId: Number(registrationSession.userId),
         webauthnUserId: storedCredentialId,
         counter: Number(counter),
       },
     });
 
-    // registration challenge consumed
-    registrationChallenges.delete(userId);
-
     return NextResponse.json({ verified: true });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: REGISTER_ERROR }, { status: 400 });
   }
 }
