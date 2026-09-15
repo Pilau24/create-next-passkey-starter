@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { verifyRegistration } from '@/lib/webauthn';
+import { getRpID, verifyRegistration } from '@/lib/webauthn';
 import { registrationChallenges } from '@/lib/challengeStore';
 
 type JsonBody = Record<string, unknown>;
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     if (!registrationSession) return NextResponse.json({ error: REGISTER_ERROR }, { status: 400 });
     registrationChallenges.delete(sessionId);
 
-    const rpID = process.env.RP_ID ?? process.env.NEXT_PUBLIC_VERCEL_URL ?? 'localhost';
+    const rpID = getRpID(req);
     const expectedOrigin = process.env.RP_ORIGIN ?? new URL(req.url).origin;
 
     const verification = await verifyRegistration({

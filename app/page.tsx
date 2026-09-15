@@ -1,5 +1,9 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { prisma } from "@/lib/db";
+import { getUserIdFromSession } from "@/lib/session";
 
+import { UserMenu } from "@/components/user-menu";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -8,7 +12,16 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 
-export default function Home() {
+export default async function Home() {
+  const sessionToken = (await cookies()).get("passkey_session")?.value;
+  const userId = getUserIdFromSession(sessionToken);
+  const user = userId
+    ? await prisma.user.findUnique({
+        where: { id: userId },
+        select: { username: true },
+      })
+    : null;
+
   return (
     <main className="flex min-h-screen flex-col">
       <header className="border-b">
@@ -17,26 +30,30 @@ export default function Home() {
             Passkey
           </Link>
 
-          <NavigationMenu>
-            <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuLink
-                  render={<Link href="/login" />}
-                  className={navigationMenuTriggerStyle()}
-                >
-                  Log in
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuLink
-                  render={<Link href="/register" />}
-                  className={navigationMenuTriggerStyle()}
-                >
-                  Register
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
+          {user ? (
+            <UserMenu username={user.username} />
+          ) : (
+            <NavigationMenu>
+              <NavigationMenuList>
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    render={<Link href="/login" />}
+                    className={navigationMenuTriggerStyle()}
+                  >
+                    Log in
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    render={<Link href="/register" />}
+                    className={navigationMenuTriggerStyle()}
+                  >
+                    Register
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
+          )}
         </div>
       </header>
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { makeRegistrationOptions } from '@/lib/webauthn';
+import { getRpID, makeRegistrationOptions } from '@/lib/webauthn';
 
 // In-memory challenge store for demo purposes. In production use a durable session store.
 import { registrationChallenges } from '@/lib/challengeStore';
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     }
 
     const rpName = process.env.RP_NAME ?? 'Passkey Demo';
-    const rpID = process.env.RP_ID ?? process.env.NEXT_PUBLIC_VERCEL_URL ?? 'localhost';
+    const rpID = getRpID(req);
 
     const options = await makeRegistrationOptions({ rpName, rpID, userID: String(user.id), userName: user.username });
 

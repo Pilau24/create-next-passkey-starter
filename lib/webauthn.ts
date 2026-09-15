@@ -5,6 +5,10 @@ import {
   verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
 
+export function getRpID(request: Request) {
+  return process.env.RP_ID ?? new URL(request.url).hostname;
+}
+
 // Lightweight wrappers / skeletons around @simplewebauthn/server APIs
 
 export async function makeRegistrationOptions({ rpName, rpID, userID, userName }: { rpName: string; rpID: string; userID: string; userName: string; }) {

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { makeAuthenticationOptions } from '@/lib/webauthn';
+import { getRpID, makeAuthenticationOptions } from '@/lib/webauthn';
 import { authChallenges } from '@/lib/challengeStore';
 
 type JsonBody = Record<string, unknown>;
@@ -26,17 +26,14 @@ export async function POST(req: Request) {
 
   try {
     const user = await prisma.user.findUnique({ where: { username } });
-
     const credentials = user
       ? await prisma.credential.findMany({ where: { internalUserId: user.id } })
       : [];
-
     const allowCredentials = credentials.map((credential: { credentialId: string }) => ({
       id: credential.credentialId,
       type: 'public-key',
     }));
-
-    const rpID = process.env.RP_ID ?? process.env.NEXT_PUBLIC_VERCEL_URL ?? 'localhost';
+    const rpID = getRpID(req);
     const options = await makeAuthenticationOptions({ rpID, allowCredentials });
     const challengeKey = crypto.randomUUID();
 

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { verifyAuthentication } from '@/lib/webauthn';
+import { getRpID, verifyAuthentication } from '@/lib/webauthn';
 import { authChallenges } from '@/lib/challengeStore';
+import { createSessionToken } from '@/lib/session';
 
 type JsonBody = Record<string, unknown>;
 const LOGIN_ERROR = 'Unable to sign in with that passkey.';
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
     const stored = await prisma.credential.findUnique({ where: { credentialId } });
     if (!stored) return NextResponse.json({ error: LOGIN_ERROR }, { status: 400 });
 
-    const rpID = process.env.RP_ID ?? process.env.NEXT_PUBLIC_VERCEL_URL ?? 'localhost';
+    const rpID = getRpID(req);
     const expectedOrigin = process.env.RP_ORIGIN ?? new URL(req.url).origin;
     const responseRecord = credentialRecord.response as Record<string, unknown> | undefined;
     const authenticatorData =
@@ -70,7 +71,18 @@ export async function POST(req: Request) {
       data: { counter: Number(newCounter), lastUsed: new Date() },
     });
 
-    return NextResponse.json({ verified: true });
+    const response = NextResponse.json({ verified: true });
+    response.cookies.set({
+      name: 'passkey_session',
+      value: createSessionToken(stored.internalUserId),
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: new URL(req.url).protocol === 'https:',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30,
+    });
+
+    return response;
   } catch (err: unknown) {
     return NextResponse.json({ error: LOGIN_ERROR }, { status: 400 });
   }
